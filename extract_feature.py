@@ -1,14 +1,15 @@
 #!/usr/bin/python
-"""
-Tencent is pleased to support the open source community by making Tencent ML-Images available.
-Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
-Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
-https://opensource.org/licenses/BSD-3-Clause
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-"""
 
-"""Use pre-trained model extract image feature
-"""
+# """
+# Tencent is pleased to support the open source community by making Tencent ML-Images available.
+# Copyright (C) 2018 THL A29 Limited, a Tencent company. All rights reserved.
+# Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+# https://opensource.org/licenses/BSD-3-Clause
+# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+# """
+
+# """Use pre-trained model extract image feature
+# """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -19,6 +20,7 @@ import cv2 as cv
 import tensorflow as tf
 from models import resnet as resnet
 from flags import FLAGS
+from tqdm import tqdm
 
 tf.app.flags.DEFINE_string("result", "",
   "file name to save features")
@@ -54,11 +56,11 @@ def preprocess(img, type="center"):
               (int(newH-224), int(newW-224)),
               (int((newH-224)/2), int((newW-224)/2))]
     for i in range(0, 5):
-      imgs[i,...] = img[offset[i][0]:offset[i][0]+224, 
+      imgs[i,...] = img[offset[i][0]:offset[i][0]+224,
                         offset[i][1]:offset[i][1]+224]
     img = cv.flip(img, 1)
     for i in range(0, 5):
-      imgs[i+5,...] = img[offset[i][0]:offset[i][0]+224, 
+      imgs[i+5,...] = img[offset[i][0]:offset[i][0]+224,
                           offset[i][1]:offset[i][1]+224]
   else:
     raise ValueError("Type not support")
@@ -89,8 +91,8 @@ saver.restore(sess, FLAGS.pretrain_ckpt)
 types='center'
 ffeat = open(FLAGS.result, 'w')
 with open(FLAGS.images, 'r') as lines:
-  for line in lines:
-    sp = line.rstrip('\n').split(' ')
+  for line in tqdm(lines):
+    sp = line.rstrip('\n').split('\t')
     raw_img = cv.imread(sp[0])
     if type(raw_img)==None or raw_img.data==None :
       print("open pic " + sp[0] + " failed")
