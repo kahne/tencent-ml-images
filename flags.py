@@ -114,6 +114,10 @@ tf.app.flags.DEFINE_boolean('FixBlock2', False,
 """
 tf.app.flags.DEFINE_integer('visiable_gpu', 0,
    "wihch gpu can use")
+tf.app.flags.DEFINE_string('visiable_gpus', '0,1',
+   "wihch gpus can use")
+tf.app.flags.DEFINE_integer('flush_every', 1000,
+   "flush output to disk every N images")
 tf.app.flags.DEFINE_string('piclist', '',
    "eval picture list")
 tf.app.flags.DEFINE_integer('interval', 32,
