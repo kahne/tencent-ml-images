@@ -19,12 +19,13 @@ import cv2 as cv
 import tensorflow as tf
 from models import resnet as resnet
 from flags import FLAGS
-from tqdm import trange
+from tqdm import tqdm
 import pickle as pkl
 import os
 
 tf.app.flags.DEFINE_string("result", "", "file name to save features")
-tf.app.flags.DEFINE_string("images", "", "contains image path per line per image")
+tf.app.flags.DEFINE_string("images", "", "contains (image path, image id) per line per image")
+tf.app.flags.DEFINE_float("prob_thres", 0.5, "filter logit output by threshold")
 
 """
 Crop Image To 224*224
@@ -86,17 +87,18 @@ def main():
     types = 'center'
 
     with open(FLAGS.images) as f:
-        img_paths = [l.strip() for l in f]
+        img_paths = [l.strip().split('\t') for l in f]
 
-    outputs = []
+    cache = {}
     if os.path.exists(FLAGS.result):
         with open(FLAGS.result, 'rb') as f:
-            outputs = pkl.load(f)
+            cache = pkl.load(f)
 
-    progress = trange(len(outputs), len(img_paths))
+    unfinished = [(p, i) for p, i in img_paths if i not in cache]
+    progress = tqdm(unfinished)
     n_errors = 0
-    for i in progress:
-        raw_img = cv.imread(img_paths[i])
+    for img_path, img_id in progress:
+        raw_img = cv.imread(img_path)
         if raw_img is None or raw_img.data is None:
             n_errors += 1
         imgs = preprocess(raw_img, types)
@@ -104,14 +106,16 @@ def main():
         output = np.squeeze(output[0])
         if types == '10crop':
             output = np.mean(output, axis=0)
-        outputs.append(output)
+        idx = output.argsort()[::-1]
+        output = idx[output[idx] > FLAGS.prob_thres].tolist()
+        cache[img_id] = output
         progress.set_description("n_errors: {}".format(n_errors))
-        if len(outputs) % FLAGS.flush_every == 0:
+        if len(cache) % FLAGS.flush_every == 0:
             with open(FLAGS.result, 'wb') as f:
-                pkl.dump(outputs, f, protocol=4)
+                pkl.dump(cache, f, protocol=4)
 
     with open(FLAGS.result, 'wb') as f:
-        pkl.dump(outputs, f, protocol=4)
+        pkl.dump(cache, f, protocol=4)
 
 
 if __name__ == '__main__':
